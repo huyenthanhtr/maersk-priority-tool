@@ -5,6 +5,8 @@ Nguyen Ngo Thao Van · Luong Tran Quang Vinh · Tran Thanh Huyen
 ---
 
 ## Cấu trúc folder
+
+```
 maersk-priority-tool/
 ├── index.html              ← Landing page (DONE - Huyen)
 ├── README.md               ← File này
@@ -23,9 +25,8 @@ maersk-priority-tool/
 │   ├── queue.css           ← Style riêng Page 3 (DONE - Huyen)
 │   └── dashboard.css       ← Style riêng Page 2 (cả 3 làm)
 └── data/
-└── tickets.json        ← 50 ticket mẫu (DONE - KHÔNG SỬA)
-
----
+    └── tickets.json        ← 50 ticket mẫu (DONE - KHÔNG SỬA)
+```
 
 ## Quan trọng — Đọc trước khi code
 
