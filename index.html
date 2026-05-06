@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maersk Vietnam | Priority Routing Tool</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <style>
+    .hero {
+      min-height: calc(100vh - 56px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-inner {
+      text-align: center;
+      max-width: 600px;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: #e0f0f8;
+      color: var(--maersk-light-blue);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .hero-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--maersk-blue);
+      line-height: 1.3;
+      margin-bottom: 12px;
+    }
+
+    .hero-desc {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 40px;
+    }
+
+    .page-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      text-align: left;
+    }
+
+    .page-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all 0.15s;
+      box-shadow: var(--shadow);
+    }
+
+    .page-card:hover {
+      border-color: var(--maersk-light-blue);
+      box-shadow: 0 4px 12px rgba(0,115,171,0.12);
+      transform: translateY(-2px);
+    }
+
+    .page-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--maersk-blue);
+    }
+
+    .page-card-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a class="navbar-brand" href="index.html">
+      <span>Maersk Vietnam</span>
+      <span class="divider">|</span>
+      <span class="subtitle">Priority Routing Tool</span>
+    </a>
+    <div class="navbar-links">
+      <a href="pages/scoring.html">Priority Scoring</a>
+      <a href="pages/queue.html">Case Queue</a>
+      <a href="pages/dashboard.html">Dashboard</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">Internship Project — May 2026</div>
+      <h1 class="hero-title">Customer Request<br/>Priority Routing Tool</h1>
+      <p class="hero-desc">
+        A prototype system for optimizing case handling at Maersk Vietnam —
+        built on a structured Priority Rule Framework to reduce SLA breaches
+        and improve assignment efficiency.
+      </p>
+
+      <div class="page-cards">
+        <a class="page-card" href="pages/scoring.html">
+          <div class="page-card-title">01 — Priority Scoring</div>
+          <div class="page-card-desc">Input a case and get Priority Score, routing lane and SLA target instantly.</div>
+        </a>
+        <a class="page-card" href="pages/queue.html">
+          <div class="page-card-title">02 — Case Queue</div>
+          <div class="page-card-desc">View all 50 sample tickets sorted by Priority Score with lane filters.</div>
+        </a>
+        <a class="page-card" href="pages/dashboard.html">
+          <div class="page-card-title">03 — Simulation Dashboard</div>
+          <div class="page-card-desc">Compare Before vs After KPIs when Priority Rule Framework is applied.</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    A.P. Moller – Maersk Vietnam &nbsp;·&nbsp; Business Analyst Internship 2026 &nbsp;·&nbsp;
+    Nguyen Ngo Thao Van · Luong Tran Quang Vinh · Tran Thanh Huyen
+  </div>
+
+</body>
+</html>
