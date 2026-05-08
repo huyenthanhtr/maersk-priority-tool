@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Priority Scoring | Maersk Priority Routing Tool</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/scoring.css" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <a class="navbar-brand" href="../index.html">
+      <span>Maersk Vietnam</span>
+      <span class="divider">|</span>
+      <span class="subtitle">Priority Routing Tool</span>
+    </a>
+    <div class="navbar-links">
+      <a href="scoring.html" class="active">Priority Scoring</a>
+      <a href="queue.html">Case Queue</a>
+      <a href="dashboard.html">Dashboard</a>
+    </div>
+  </nav>
+
+  <div class="page-container">
+    <div class="page-header">
+      <h1 class="page-title">Priority Scoring</h1>
+      <p class="page-subtitle">
+        Enter case details to calculate the Priority Score, routing lane, and SLA target.
+      </p>
+    </div>
+
+    <div class="scoring-layout">
+      <section class="card form-card">
+        <div class="section-head">
+          <h2 class="section-title">Case Input</h2>
+          <p class="section-subtitle">Complete the case details below, then calculate the routing priority.</p>
+        </div>
+
+        <form id="scoringForm" novalidate>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="requestType">Request Type</label>
+              <select class="form-select" id="requestType" name="requestType" required>
+                <option value="" selected disabled>Select request type</option>
+                <option value="B/L Amendment">B/L Amendment</option>
+                <option value="FCR">FCR</option>
+                <option value="Inspection Certificate">Inspection Certificate</option>
+                <option value="Quarantine Documents">Quarantine Documents</option>
+                <option value="COO">COO</option>
+                <option value="Packing List">Packing List</option>
+                <option value="Invoice">Invoice</option>
+                <option value="System Support">System Support</option>
+                <option value="General Inquiry">General Inquiry</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <span class="form-label" id="urgentFlagLabel">Urgent Flag</span>
+              <div class="toggle-group" role="radiogroup" aria-labelledby="urgentFlagLabel">
+                <div class="toggle-option">
+                  <input class="toggle-input" type="radio" id="urgentYes" name="urgentFlag" value="yes" />
+                  <label class="toggle-label" for="urgentYes">
+                    <span class="toggle-title">Yes</span>
+                    <span class="toggle-hint">Maps to urgent</span>
+                  </label>
+                </div>
+                <div class="toggle-option">
+                  <input class="toggle-input" type="radio" id="urgentNo" name="urgentFlag" value="no" checked />
+                  <label class="toggle-label" for="urgentNo">
+                    <span class="toggle-title">No</span>
+                    <span class="toggle-hint">Maps to normal</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="etdDays">ETD Remaining (days)</label>
+              <input
+                class="form-input"
+                id="etdDays"
+                name="etdDays"
+                type="number"
+                min="0"
+                max="30"
+                step="1"
+                inputmode="numeric"
+                placeholder="Enter a whole number from 0 to 30"
+              />
+              <p class="field-help">Use whole numbers only.</p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="customerTier">Customer Tier</label>
+              <select class="form-select" id="customerTier" name="customerTier" required>
+                <option value="" selected disabled>Select customer tier</option>
+                <option value="Key Account">Key Account</option>
+                <option value="Standard">Standard</option>
+                <option value="Occasional">Occasional</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <p class="form-note">This page uses the shared scoring engine and does not store case data.</p>
+            <button class="btn btn-primary" type="submit">Calculate Score</button>
+          </div>
+
+          <p class="validation-message" id="validationMessage" role="alert" hidden></p>
+        </form>
+      </section>
+
+      <section class="card result-card state-empty" id="resultCard" aria-live="polite">
+        <div class="section-head">
+          <h2 class="section-title">Scoring Result</h2>
+          <p class="section-subtitle">The result panel updates after each successful calculation.</p>
+        </div>
+
+        <div class="result-summary">
+          <div class="score-panel">
+            <div class="summary-label">Priority Score</div>
+            <div class="score-value" id="scoreValue">--</div>
+            <div class="score-scale">Out of 100 points</div>
+          </div>
+
+          <div class="lane-panel">
+            <div class="summary-label">Routing Lane</div>
+            <div class="lane-badge-wrap">
+              <span class="badge badge-placeholder" id="laneBadge">Waiting for input</span>
+            </div>
+            <div class="lane-caption" id="laneCaption">
+              Complete the form to see the recommended routing lane.
+            </div>
+          </div>
+        </div>
+
+        <div class="result-details">
+          <div class="detail-row">
+            <div class="detail-label">SLA Target</div>
+            <div class="detail-value" id="slaValue">--</div>
+          </div>
+          <div class="detail-row detail-row-action">
+            <div class="detail-label">Action Recommendation</div>
+            <div class="detail-value detail-value-action" id="actionValue">
+              Fill in the case details and calculate the score to view the recommended next step.
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="../js/scoringEngine.js"></script>
+  <script src="../js/scoring.js"></script>
+</body>
+</html>
