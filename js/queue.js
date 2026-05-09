@@ -1,26 +1,106 @@
-// queue.js — Case Queue Page Logic
+// queue.js - Case Queue Page Logic
 
 let allTickets = []
+
+const DOCUMENT_TYPE_MAP = {
+  'B/L': 'B/L Amendment'
+}
+
+const VENDOR_TIER_MAP = {
+  'MekongRice Export': 'Key Account',
+  'Hanoi Textile Ltd': 'Key Account',
+  'SunFurniture Corp': 'Key Account',
+  'PhuMy Plastics': 'Standard',
+  'VN Rubber Co.': 'Standard',
+  'VinaTech Components': 'Standard',
+  'SaiGon Foam Co.': 'Occasional',
+  'EcoWood Vietnam': 'Occasional',
+  'Delta Seafood': 'Occasional',
+  'Viet Tin Garment': 'Occasional'
+}
 
 async function loadTickets() {
   const res = await fetch('../data/tickets.json')
   const data = await res.json()
+  const tickets = Array.isArray(data) ? data : data.tickets
 
-  allTickets = data.map(ticket => {
+  allTickets = tickets.map(ticket => {
+    const normalizedTicket = normalizeTicket(ticket)
     const score = calculateScore({
-      urgencyFlag: ticket.urgencyFlag,
-      etdDays: ticket.etdDays,
-      requestType: ticket.requestType,
-      customerTier: ticket.customerTier
+      urgencyFlag: normalizedTicket.urgencyFlag,
+      etdDays: normalizedTicket.etdDays,
+      requestType: normalizedTicket.requestType,
+      customerTier: normalizedTicket.customerTier
     })
     const lane = getLane(score)
     const sla = getSLA(lane)
-    return { ...ticket, score, lane, sla }
+    return { ...normalizedTicket, score, lane, sla }
   })
 
   allTickets.sort((a, b) => b.score - a.score)
   updateLaneCounts(allTickets)
   renderTable(allTickets)
+}
+
+function normalizeTicket(ticket) {
+  const requestType = ticket.requestType || getRequestType(ticket.document_type)
+  const customerTier = ticket.customerTier
+                    || ticket.customer_tier
+                    || VENDOR_TIER_MAP[ticket.factory_vendor]
+                    || 'Standard'
+  const etdDays = Number.isFinite(Number(ticket.etdDays))
+                ? Number(ticket.etdDays)
+                : getETDDays(ticket.created_at, ticket.etd)
+
+  return {
+    ...ticket,
+    id: ticket.id || ticket.ticket_id,
+    requestType,
+    urgencyFlag: ticket.urgencyFlag || getUrgencyFlag(ticket.urgent_flag),
+    etdDays,
+    customerTier,
+    assignedPIC: ticket.assignedPIC || ticket.assigned_agent,
+    createdTime: ticket.createdTime || getTime(ticket.created_at),
+    firstResponseTime: ticket.firstResponseTime || getTime(ticket.first_response_at),
+    status: ticket.status || getStatus(ticket.sla_status)
+  }
+}
+
+function getRequestType(documentType) {
+  return DOCUMENT_TYPE_MAP[documentType] || documentType || 'General Inquiry'
+}
+
+function getUrgencyFlag(urgentFlag) {
+  return urgentFlag === 'Yes' ? 'urgent' : 'normal'
+}
+
+function getStatus(slaStatus) {
+  return slaStatus === 'Breached' ? 'Missed' : slaStatus || 'Met'
+}
+
+function getTime(dateTime) {
+  const match = String(dateTime || '').match(/(\d{2}:\d{2})$/)
+  return match ? match[1] : ''
+}
+
+function getDateUTC(dateValue) {
+  const match = String(dateValue || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!match) return null
+
+  const year = Number(match[1])
+  const month = Number(match[2]) - 1
+  const day = Number(match[3])
+  return Date.UTC(year, month, day)
+}
+
+function getETDDays(createdAt, etd) {
+  const createdDate = getDateUTC(createdAt)
+  const etdDate = getDateUTC(etd)
+
+  if (createdDate === null || etdDate === null) return 0
+
+  const days = Math.round((etdDate - createdDate) / 86400000)
+  return Math.max(0, days)
 }
 
 function updateLaneCounts(tickets) {
