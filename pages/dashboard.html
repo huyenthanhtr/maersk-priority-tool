@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulation Dashboard | Maersk Priority Routing Tool</title>
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <a class="navbar-brand" href="../index.html">
+      <span>Maersk Vietnam</span>
+      <span class="divider">|</span>
+      <span class="subtitle">Priority Routing Tool</span>
+    </a>
+    <div class="navbar-links">
+      <a href="scoring.html">Priority Scoring</a>
+      <a href="queue.html">Case Queue</a>
+      <a href="dashboard.html" class="active">Dashboard</a>
+    </div>
+  </nav>
+
+  <div class="page-container">
+    <div class="page-header">
+      <h1 class="page-title">Simulation Dashboard</h1>
+      <p class="page-subtitle">Compare the high-level impact of Priority Rule Framework versus FCFS handling across key service metrics.</p>
+    </div>
+
+    <section class="card kpi-comparison-card">
+      <div class="section-head">
+        <h2 class="section-title">Before vs After KPI Comparison</h2>
+        <p class="section-subtitle">The simulation contrasts core case handling performance before introducing priority routing and after applying the new framework.</p>
+      </div>
+
+      <div class="kpi-columns">
+        <div class="kpi-column kpi-before">
+          <div class="column-header">Before (FCFS)</div>
+          <div class="kpi-grid" id="beforeKpis">
+            <div class="kpi-card">
+              <div class="kpi-label">Average FRT (hours)</div>
+              <div class="kpi-value" id="beforeFrt">--</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">SLA Compliance Rate</div>
+              <div class="kpi-value" id="beforeSla">--</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Assignment Delay Rate</div>
+              <div class="kpi-value" id="beforeDelay">--</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Priority Handling Consistency</div>
+              <div class="kpi-value" id="beforeUrgentOnTime">--</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Workload Distribution Index</div>
+              <div class="kpi-value" id="beforeWorkload">--</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-column kpi-after">
+          <div class="column-header">After (Priority Rule Framework)</div>
+          <div class="kpi-grid" id="afterKpis">
+            <div class="kpi-card">
+              <div class="kpi-label">Average FRT (hours)</div>
+              <div class="kpi-value" id="afterFrt">--</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">SLA Compliance Rate</div>
+              <div class="kpi-value" id="afterSla">--</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Assignment Delay Rate</div>
+              <div class="kpi-value" id="afterDelay">--</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Priority Handling Consistency</div>
+              <div class="kpi-value" id="afterUrgentOnTime">--</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Workload Distribution Index</div>
+              <div class="kpi-value" id="afterWorkload">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="dashboard-layout">
+      <section class="card chart-card">
+        <div class="section-head">
+          <h2 class="section-title">Average FRT by Request Type</h2>
+          <p class="section-subtitle">Compare response time before and after the priority framework for each request type.</p>
+        </div>
+        <div class="bar-chart" id="barChart"></div>
+      </section>
+
+      <section class="card chart-card mini-chart-card">
+        <div class="section-head">
+          <h2 class="section-title">After: Case Distribution by Lane</h2>
+          <p class="section-subtitle">How cases are routed into Critical, Priority and Standard lanes once the rule framework is active.</p>
+        </div>
+        <div class="pie-card">
+          <svg class="pie-chart" viewBox="0 0 240 240" aria-label="Case distribution pie chart" role="img" id="pieChart"></svg>
+          <div class="pie-legend" id="pieLegend"></div>
+        </div>
+      </section>
+
+      <section class="card chart-card line-chart-card">
+        <div class="section-head">
+          <h2 class="section-title">SLA Compliance Rate by Day</h2>
+          <p class="section-subtitle">Weekly trend of SLA compliance before and after priority routing.</p>
+        </div>
+        <div class="line-chart-wrapper">
+          <svg class="line-chart" viewBox="0 0 680 320" aria-label="SLA compliance line chart" role="img" id="lineChart"></svg>
+          <div class="line-labels" id="lineLabels"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="../js/dashboard.js"></script>
+</body>
+</html>
