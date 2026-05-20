@@ -7,15 +7,21 @@
   <link rel="stylesheet" href="css/global.css" />
   <style>
     .hero {
-      min-height: calc(100vh - 56px);
+      min-height: calc(100vh - 88px);
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 42px 24px 60px;
+      background: linear-gradient(180deg, rgba(0, 115, 171, 0.16), rgba(255,255,255,0.92));
+      border-radius: 32px;
+      margin: 24px auto 0;
+      max-width: 1180px;
+      box-shadow: 0 28px 80px rgba(15, 23, 42, 0.08);
     }
 
     .hero-inner {
       text-align: center;
-      max-width: 600px;
+      max-width: 720px;
     }
 
     .hero-tag {
@@ -48,32 +54,33 @@
 
     .page-cards {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
       text-align: left;
+      margin-top: 24px;
     }
 
     .page-card {
-      background: var(--bg-white);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), #f3f8ff);
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      border-radius: 24px;
+      padding: 26px;
       text-decoration: none;
       color: var(--text-primary);
-      transition: all 0.15s;
-      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
     }
 
     .page-card:hover {
-      border-color: var(--maersk-light-blue);
-      box-shadow: 0 4px 12px rgba(0,115,171,0.12);
-      transform: translateY(-2px);
+      border-color: rgba(0, 115, 171, 0.32);
+      box-shadow: 0 28px 70px rgba(15, 23, 42, 0.14);
+      transform: translateY(-4px);
     }
 
     .page-card-title {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 6px;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
       color: var(--maersk-blue);
     }
 
@@ -97,9 +104,12 @@
   <!-- NAVBAR -->
   <nav class="navbar">
     <a class="navbar-brand" href="index.html">
-      <span>Maersk Vietnam</span>
-      <span class="divider">|</span>
-      <span class="subtitle">Priority Routing Tool</span>
+      <img class="brand-logo" src="images/maersk-logo.png" alt="Maersk logo" />
+      <div>
+        <span>Maersk Vietnam</span>
+        <span class="divider">|</span>
+        <span class="subtitle">Priority Routing Tool</span>
+      </div>
     </a>
     <div class="navbar-links">
       <a href="pages/scoring.html">Priority Scoring</a>
@@ -111,25 +121,25 @@
   <!-- HERO -->
   <div class="hero">
     <div class="hero-inner">
-      <div class="hero-tag">Internship Project — May 2026</div>
+      <div class="hero-tag">Internship Project - May 2026</div>
       <h1 class="hero-title">Customer Request<br/>Priority Routing Tool</h1>
       <p class="hero-desc">
-        A prototype system for optimizing case handling at Maersk Vietnam —
+        A prototype system for optimizing case handling at Maersk Vietnam -
         built on a structured Priority Rule Framework to reduce SLA breaches
         and improve assignment efficiency.
       </p>
 
       <div class="page-cards">
         <a class="page-card" href="pages/scoring.html">
-          <div class="page-card-title">01 — Priority Scoring</div>
+          <div class="page-card-title">01 - Priority Scoring</div>
           <div class="page-card-desc">Input a case and get Priority Score, routing lane and SLA target instantly.</div>
         </a>
         <a class="page-card" href="pages/queue.html">
-          <div class="page-card-title">02 — Case Queue</div>
+          <div class="page-card-title">02 - Case Queue</div>
           <div class="page-card-desc">View all 50 sample tickets sorted by Priority Score with lane filters.</div>
         </a>
         <a class="page-card" href="pages/dashboard.html">
-          <div class="page-card-title">03 — Simulation Dashboard</div>
+          <div class="page-card-title">03 - Simulation Dashboard</div>
           <div class="page-card-desc">Compare Before vs After KPIs when Priority Rule Framework is applied.</div>
         </a>
       </div>
