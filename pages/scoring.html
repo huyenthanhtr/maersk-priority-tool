@@ -59,6 +59,31 @@
             </div>
 
             <div class="form-group">
+              <label class="form-label" for="channel">Channel</label>
+              <select class="form-select" id="channel" name="channel" required>
+                <option value="" selected disabled>Select case channel</option>
+                <option value="Case Processing System">Case Processing System</option>
+                <option value="Personal Staff Email">Personal Staff Email</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="factoryVendor">Factory / Vendor</label>
+              <input
+                class="form-input"
+                id="factoryVendor"
+                name="factoryVendor"
+                type="text"
+                list="vendorList"
+                placeholder="Start typing to suggest vendor"
+                autocomplete="off"
+                required
+              />
+              <datalist id="vendorList"></datalist>
+              <p class="field-help">Type vendor name; suggestions appear from known vendors.</p>
+            </div>
+
+            <div class="form-group">
               <span class="form-label" id="urgentFlagLabel">Urgent Flag</span>
               <div class="toggle-group" role="radiogroup" aria-labelledby="urgentFlagLabel">
                 <div class="toggle-option">
@@ -106,8 +131,11 @@
           </div>
 
           <div class="form-actions">
-            <p class="form-note">This page uses the shared scoring engine and does not store case data.</p>
-            <button class="btn btn-primary" type="submit">Calculate Score</button>
+            <p class="form-note">After calculating, press Save to download the updated case file.</p>
+            <div class="form-button-group">
+              <button class="btn btn-primary" type="submit">Calculate Score</button>
+              <button class="btn btn-secondary" type="button" id="btnSave" disabled>Save Case</button>
+            </div>
           </div>
 
           <p class="validation-message" id="validationMessage" role="alert" hidden></p>
@@ -139,6 +167,14 @@
         </div>
 
         <div class="result-details">
+          <div class="detail-row">
+            <div class="detail-label">Case ID</div>
+            <div class="detail-value" id="ticketIdValue">--</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Assigned Agent</div>
+            <div class="detail-value" id="assignedAgentValue">--</div>
+          </div>
           <div class="detail-row">
             <div class="detail-label">SLA Target</div>
             <div class="detail-value" id="slaValue">--</div>
