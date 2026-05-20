@@ -1,0 +1,12 @@
+[
+  { "name": "Delta Seafood", "customerTier": "Occasional" },
+  { "name": "EcoWood Vietnam", "customerTier": "Occasional" },
+  { "name": "Hanoi Textile Ltd", "customerTier": "Key Account" },
+  { "name": "MekongRice Export", "customerTier": "Key Account" },
+  { "name": "PhuMy Plastics", "customerTier": "Standard" },
+  { "name": "SaiGon Foam Co.", "customerTier": "Occasional" },
+  { "name": "SunFurniture Corp", "customerTier": "Key Account" },
+  { "name": "VN Rubber Co.", "customerTier": "Standard" },
+  { "name": "Viet Tin Garment", "customerTier": "Occasional" },
+  { "name": "VinaTech Components", "customerTier": "Standard" }
+]

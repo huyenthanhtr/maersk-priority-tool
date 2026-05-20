@@ -96,16 +96,23 @@
 
 .form-actions {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   margin-top: 8px;
+}
+
+.form-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .form-note {
   font-size: 12px;
   color: var(--text-secondary);
   line-height: 1.6;
+  max-width: 420px;
 }
 
 .validation-message {

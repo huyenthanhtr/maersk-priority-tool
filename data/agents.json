@@ -1,0 +1,7 @@
+[
+  { "name": "Tran Thi Lan", "lane": "Critical" },
+  { "name": "Do Quang Khai", "lane": "Critical" },
+  { "name": "Nguyen Minh Duc", "lane": "Priority" },
+  { "name": "Pham Thi Thu", "lane": "Priority" },
+  { "name": "Le Van Hoang", "lane": "Standard" }
+]
