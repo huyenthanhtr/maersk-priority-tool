@@ -1,0 +1,25 @@
+{
+  "name": "maersk-priority-tool",
+  "version": "1.0.0",
+  "description": "markdown# Maersk Vietnam — Priority Routing Tool\r Internship Project | May 2026\r Nguyen Ngo Thao Van · Luong Tran Quang Vinh · Tran Thanh Huyen",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huyenthanhtr/maersk-priority-tool.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/huyenthanhtr/maersk-priority-tool/issues"
+  },
+  "homepage": "https://github.com/huyenthanhtr/maersk-priority-tool#readme",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

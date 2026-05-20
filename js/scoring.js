@@ -144,13 +144,19 @@ function initAgentPool(data) {
   }))
 }
 
-function assignAgentForLane(lane) {
+function selectAgentForLane(lane) {
   const laneAgents = agentPool.filter(agent => agent.lane === lane)
   if (laneAgents.length === 0) return 'Unassigned'
 
   const minCount = Math.min(...laneAgents.map(agent => agent.assignedCount))
   const candidates = laneAgents.filter(agent => agent.assignedCount === minCount)
-  const selected = candidates[0]
+  return candidates[0].name
+}
+
+function assignAgentForLane(lane) {
+  const selectedName = selectAgentForLane(lane)
+  const selected = agentPool.find(agent => agent.name === selectedName)
+  if (!selected) return 'Unassigned'
   selected.assignedCount += 1
   saveAgentAssignmentCounts()
   return selected.name
@@ -174,11 +180,9 @@ function formatTicketId(number) {
   return `TKT-${String(number).padStart(4, '0')}`
 }
 
-function getNextTicketId() {
-  refreshNextTicketNumber()
-  const ticketId = formatTicketId(nextTicketNumber)
-  nextTicketNumber += 1
-  return ticketId
+function getDraftTicketId() {
+  const maxId = getMaxTicketNumber()
+  return formatTicketId(maxId + 1)
 }
 
 function validateForm() {
@@ -265,8 +269,8 @@ function buildResultContext(formData) {
   const lane = getLane(score)
   const sla = getSLA(lane)
   const action = getAction(lane)
-  const assignedAgent = assignAgentForLane(lane)
-  const ticketId = getNextTicketId()
+  const assignedAgent = selectAgentForLane(lane)
+  const ticketId = getDraftTicketId()
 
   return {
     ...formData,
@@ -325,33 +329,51 @@ function createNewTicketObject(result) {
   }
 }
 
-function downloadJSON(filename, data) {
-  const json = JSON.stringify(data, null, 2)
-  const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+async function saveTicketsToServer(data) {
+  const response = await fetch('/api/tickets', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to save tickets')
+  }
+
+  return response.json()
 }
 
-function saveCurrentResult() {
+async function saveCurrentResult() {
   if (!currentResult) return
 
   const newTicket = createNewTicketObject(currentResult)
-  const updatedTickets = Array.isArray(ticketsData) ? [...ticketsData, newTicket] : [newTicket]
-  const payload = { tickets: updatedTickets }
 
   if (!getVendorEntry(currentResult.factoryVendor)) {
     saveVendorSuggestion(currentResult.factoryVendor, currentResult.customerTier)
   }
 
-  downloadJSON('tickets.json', payload)
-  saveButton.disabled = true
-  saveButton.textContent = 'Download Ready'
+  assignAgentForLane(currentResult.lane)
+
+  try {
+    await saveTicketsToServer(newTicket)
+
+    ticketsData = Array.isArray(ticketsData)
+      ? [...ticketsData, newTicket]
+      : [newTicket]
+
+    refreshNextTicketNumber()
+
+    saveButton.disabled = true
+    saveButton.textContent = 'Saved Successfully'
+
+    alert('Ticket saved into tickets.json!')
+  } catch (error) {
+    console.error(error)
+
+    alert('Failed to save ticket to server.')
+  }
 }
 
 function loadVendorData() {
@@ -367,7 +389,7 @@ function loadAgentData() {
 }
 
 function loadTicketData() {
-  return fetch('../data/tickets.json')
+  return fetch('/api/tickets')
     .then(res => res.json())
     .then(data => {
       ticketsData = Array.isArray(data) ? data : data.tickets || []

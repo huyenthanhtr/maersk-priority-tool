@@ -97,7 +97,7 @@
 
 .form-actions {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   margin-top: 8px;
@@ -114,6 +114,7 @@
   color: var(--text-secondary);
   line-height: 1.6;
   max-width: 420px;
+  flex: 1 1 220px;
 }
 
 .validation-message {
@@ -257,10 +258,6 @@
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.6;
-}
-
-.detail-value-action {
-  font-weight: 500;
 }
 
 @media (max-width: 960px) {
