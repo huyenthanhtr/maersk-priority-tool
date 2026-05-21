@@ -25,8 +25,8 @@ function escapeHtml(value) {
 
 // Classify lane based on priority score
 function getLane(score) {
-  if (score >= 70) return 'Critical'
-  if (score >= 40) return 'Priority'
+  if (score >= 80) return 'Critical'
+  if (score >= 50) return 'Priority'
   return 'Standard'
 }
 

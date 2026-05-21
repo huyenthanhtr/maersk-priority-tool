@@ -38,7 +38,7 @@
             <h1 class="page-title">Simulation Dashboard</h1>
             <span class="header-badge">Priority Rule Framework</span>
           </div>
-          <p class="page-subtitle">Analyze priority routing impact across SLA, FRT, and lane split metrics with premium analytics clarity.</p>
+          <p class="page-subtitle">Demo simulation of how a priority rule framework could improve SLA, FRT, and workload balance.</p>
         </div>
       </div>
     </div>
@@ -46,12 +46,35 @@
     <section class="card kpi-comparison-card">
       <div class="section-head section-head--spaced">
         <div>
-          <h2 class="section-title">Performance Snapshot</h2>
-          <p class="section-subtitle">Side-by-side KPI comparison of before and after priority routing.</p>
+          <h2 class="section-title">Simulated Performance Impact</h2>
+          <p class="section-subtitle">Estimated KPI impact based on current ticket data and configured improvement assumptions.</p>
         </div>
       </div>
 
       <div class="kpi-card-row" id="kpiCards"></div>
+      <p class="simulation-note">Simulated Priority Routing values are estimated for demo purposes. Current FCFS values are calculated from the sample ticket dataset.</p>
+      <div class="simulation-assumptions" aria-label="Simulation assumptions">
+        <div>
+          <span>FRT</span>
+          <strong>30% reduction</strong>
+        </div>
+        <div>
+          <span>SLA compliance</span>
+          <strong>18% uplift, capped at 100%</strong>
+        </div>
+        <div>
+          <span>Assignment delay</span>
+          <strong>65% reduction</strong>
+        </div>
+        <div>
+          <span>Priority consistency</span>
+          <strong>60% uplift, capped at 100%</strong>
+        </div>
+        <div>
+          <span>Workload index</span>
+          <strong>56% reduction</strong>
+        </div>
+      </div>
     </section>
 
     <div class="dashboard-layout">
@@ -59,16 +82,16 @@
         <section class="card chart-card chart-panel">
           <div class="section-head section-head--compact bar-chart-head">
             <div>
-              <h2 class="section-title">Average FRT by Request Type</h2>
-              <p class="section-subtitle">Relative response time before and after the priority framework.</p>
+              <h2 class="section-title">Simulated FRT Reduction by Request Type</h2>
+              <p class="section-subtitle">Applies the same 30% FRT reduction assumption used in the KPI simulation.</p>
             </div>
             <div class="bar-chart-summary" aria-label="FRT summary">
               <div class="bar-summary-item">
-                <span>Best gain</span>
+                <span>Best saved</span>
                 <strong id="barBestGain"></strong>
               </div>
               <div class="bar-summary-item bar-summary-item--accent">
-                <span>Avg reduction</span>
+                <span>Avg saved</span>
                 <strong id="barAvgReduction"></strong>
               </div>
             </div>
@@ -81,11 +104,11 @@
         <section class="card chart-card mini-chart-card">
           <div class="section-head section-head--compact pie-chart-head">
             <div>
-              <h2 class="section-title">After: Case Distribution by Lane</h2>
-              <p class="section-subtitle">Case routing split once the priority rule framework is active.</p>
+              <h2 class="section-title">Priority Routing Mix by Lane</h2>
+              <p class="section-subtitle">How current sample tickets would be classified under the priority rule framework.</p>
             </div>
             <div class="pie-stat-chip">
-              <span>Dominant lane</span>
+              <span>Top sample lane</span>
               <strong id="pieDominantLane"></strong>
             </div>
           </div>
@@ -101,16 +124,16 @@
       <section class="card chart-card line-chart-card">
         <div class="section-head section-head--compact line-chart-head">
           <div>
-            <h2 class="section-title">SLA Compliance Rate by Day</h2>
-            <p class="section-subtitle">Trend comparison of SLA performance across the week.</p>
+            <h2 class="section-title">Simulated SLA Compliance by Day</h2>
+            <p class="section-subtitle">Current daily SLA is calculated from sample tickets; simulated values apply the 18% uplift assumption.</p>
           </div>
           <div class="line-chart-summary" aria-label="SLA compliance summary">
             <div class="line-summary-item">
-              <span>After Avg</span>
+              <span>Simulated Avg</span>
               <strong id="lineAfterAvg"></strong>
             </div>
             <div class="line-summary-item line-summary-item--accent">
-              <span>Weekly Lift</span>
+              <span>Avg Lift</span>
               <strong id="lineWeeklyLift"></strong>
             </div>
           </div>

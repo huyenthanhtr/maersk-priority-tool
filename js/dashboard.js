@@ -4,8 +4,8 @@ let ticketData = []
 
 // Lane classification based on priority score
 function getLane(score) {
-  if (score >= 70) return 'Critical'
-  if (score >= 40) return 'Priority'
+  if (score >= 80) return 'Critical'
+  if (score >= 50) return 'Priority'
   return 'Standard'
 }
 
@@ -148,13 +148,34 @@ function computePieChartData() {
 }
 
 function computeLineChartData() {
-  // Simulate SLA compliance by day of week (extract from created_at)
-  const dayMap = { 'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6 }
-  const slaBefore = [70, 71, 73, 72, 71, 69, 70]
-  const slaAfter = [85, 86, 88, 87, 89, 87, 88]
+  const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const dayStats = Object.fromEntries(labels.map(day => [day, { total: 0, met: 0 }]))
+
+  ticketData.forEach(ticket => {
+    const createdAt = new Date(String(ticket.created_at || '').replace(' ', 'T'))
+    if (Number.isNaN(createdAt.getTime())) return
+
+    const day = dayNames[createdAt.getDay()]
+    if (!dayStats[day]) return
+
+    dayStats[day].total += 1
+    if (ticket.sla_status === 'Met') {
+      dayStats[day].met += 1
+    }
+  })
+
+  const plottedDays = labels.filter(day => dayStats[day].total > 0)
+  const activeLabels = plottedDays.length > 1 ? plottedDays : labels
+  const slaBefore = activeLabels.map(day => {
+    const stat = dayStats[day]
+    if (!stat.total) return Math.round(window.dashboardMetrics.before.slaCompliance)
+    return Math.round((stat.met / stat.total) * 100)
+  })
+  const slaAfter = slaBefore.map(value => Math.min(100, Math.round(value * 1.18)))
 
   window.lineSeries = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    labels: activeLabels,
     before: slaBefore,
     after: slaAfter
   }
@@ -170,14 +191,14 @@ function renderBarChart() {
   const reductions = window.barSeries.map(entry => entry.before - entry.after)
   const bestGain = Math.max(...reductions)
   const avgReduction = average(reductions)
-  setText('barBestGain', `${bestGain >= 0 ? '' : '-'}${formatNumber(Math.abs(bestGain))}h`)
-  setText('barAvgReduction', `${avgReduction >= 0 ? '-' : '+'}${formatNumber(Math.abs(avgReduction))}h`)
+  setText('barBestGain', `${formatNumber(Math.abs(bestGain))}h`)
+  setText('barAvgReduction', `${formatNumber(Math.abs(avgReduction))}h`)
 
   const legend = document.createElement('div')
   legend.className = 'bar-legend'
   legend.innerHTML = `
-    <div class="bar-legend-item"><span class="bar-swatch" style="background:#A8C4D4"></span><span>Before</span></div>
-    <div class="bar-legend-item"><span class="bar-swatch" style="background:#003F6B"></span><span>After</span></div>`
+    <div class="bar-legend-item"><span class="bar-swatch" style="background:#A8C4D4"></span><span>Current FCFS</span></div>
+    <div class="bar-legend-item"><span class="bar-swatch" style="background:#003F6B"></span><span>Simulated Priority</span></div>`
 
   const plot = document.createElement('div')
   plot.className = 'bar-chart-plot'
@@ -217,7 +238,7 @@ function renderBarChart() {
 
     const delta = document.createElement('div')
     delta.className = 'bar-delta'
-    delta.textContent = `-${(entry.before - entry.after).toFixed(1)}h`
+    delta.innerHTML = `<span>${formatNumber(Math.abs(entry.before - entry.after))}h</span><span>saved</span>`
 
     const groupTitle = document.createElement('div')
     groupTitle.className = 'bar-group-title'
@@ -269,11 +290,13 @@ function renderPieChart() {
   const legend = document.getElementById('pieLegend')
   const radius = 108
   const center = 160
+  const viewPadding = 34
   const circumference = 2 * Math.PI * radius
   const topLane = window.pieSeries.reduce((best, current) => (current.value > best.value ? current : best), window.pieSeries[0])
 
   let offset = 0
   svg.innerHTML = ''
+  svg.setAttribute('viewBox', `${-viewPadding} ${-viewPadding} ${320 + viewPadding * 2} ${320 + viewPadding * 2}`)
   legend.innerHTML = ''
   setText('pieDominantLane', `${topLane.label} ${topLane.value}%`)
   const pieInteractive = []
@@ -316,7 +339,7 @@ function renderPieChart() {
 
     const midAngle = -90 + (offset + segment.value / 2) * 3.6
     const radians = (midAngle * Math.PI) / 180
-    const labelRadius = radius + 26
+    const labelRadius = radius + 34
     const labelX = center + Math.cos(radians) * labelRadius
     const labelY = center + Math.sin(radians) * labelRadius
     const anchor =
@@ -426,8 +449,8 @@ function renderLineChart() {
   labels.innerHTML = ''
   legend.innerHTML = ''
 
-  const afterAvg = average(window.lineSeries.after)
-  const beforeAvg = average(window.lineSeries.before)
+  const afterAvg = window.dashboardMetrics.after.slaCompliance
+  const beforeAvg = window.dashboardMetrics.before.slaCompliance
   const weeklyLift = afterAvg - beforeAvg
   setText('lineAfterAvg', `${Math.round(afterAvg)}%`)
   setText('lineWeeklyLift', `${weeklyLift >= 0 ? '+' : ''}${Math.round(weeklyLift)} pts`)
@@ -496,8 +519,8 @@ function renderLineChart() {
   })
 
   const legendItems = [
-    { label: 'After (Priority Framework)', color: '#003F6B', type: 'solid' },
-    { label: 'Before (FCFS)', color: '#A8C4D4', type: 'dashed' }
+    { label: 'Simulated Priority', color: '#003F6B', type: 'solid' },
+    { label: 'Current FCFS', color: '#A8C4D4', type: 'dashed' }
   ]
 
   legendItems.forEach(item => {
@@ -708,6 +731,7 @@ function renderLineChart() {
     shadow: true
   })
 
+  labels.style.gridTemplateColumns = `repeat(${window.lineSeries.labels.length}, minmax(0, 1fr))`
   window.lineSeries.labels.forEach(day => {
     const label = document.createElement('div')
     label.className = 'line-label'
@@ -723,19 +747,22 @@ function renderKpisAccent() {
   const metrics = [
     { label: 'Average FRT', before: window.dashboardMetrics.before.frt, after: window.dashboardMetrics.after.frt, unit: 'h', better: 'lower' },
     { label: 'SLA Compliance Rate', before: window.dashboardMetrics.before.slaCompliance, after: window.dashboardMetrics.after.slaCompliance, unit: '%', better: 'higher' },
-    { label: 'Assignment Delay Rate', before: window.dashboardMetrics.before.assignmentDelay, after: window.dashboardMetrics.after.assignmentDelay, unit: '%', better: 'lower' },
+    { label: 'Average Assignment Delay', before: window.dashboardMetrics.before.assignmentDelay, after: window.dashboardMetrics.after.assignmentDelay, unit: 'min', better: 'lower' },
     { label: 'Priority Handling Consistency', before: window.dashboardMetrics.before.urgentOnTime, after: window.dashboardMetrics.after.urgentOnTime, unit: '%', better: 'higher' },
     { label: 'Workload Distribution Index', before: window.dashboardMetrics.before.workload, after: window.dashboardMetrics.after.workload, unit: '', better: 'lower' }
   ]
 
   metrics.forEach(metric => {
     const changeAmount = metric.after - metric.before
-    const percentChange = Math.round((changeAmount / metric.before) * 100)
+    const percentChange = metric.before === 0 ? 0 : Math.round((changeAmount / metric.before) * 100)
+    const noChange = percentChange === 0
     const improved = metric.better === 'lower' ? metric.after < metric.before : metric.after > metric.before
-    const arrow = improved ? (metric.better === 'lower' ? '▼' : '▲') : (metric.better === 'lower' ? '▲' : '▼')
-    const changeText = `${percentChange > 0 ? '+' : ''}${percentChange}% ${improved ? 'improved' : 'worse'}`
+    const arrow = noChange ? '&rarr;' : improved ? (metric.better === 'lower' ? '&#9660;' : '&#9650;') : (metric.better === 'lower' ? '&#9650;' : '&#9660;')
+    const changeLabel = noChange ? 'no change' : improved ? 'improved' : 'worse'
+    const changeText = `${percentChange > 0 ? '+' : ''}${percentChange}% ${changeLabel}`
     const directionLabel = metric.better === 'lower' ? 'Lower better' : 'Higher better'
     const toneClass = metric.better === 'lower' ? 'kpi-card--lower' : 'kpi-card--higher'
+    const changeClass = noChange ? 'kpi-change-neutral' : improved ? 'kpi-change-improved' : 'kpi-change-worse'
 
     const card = document.createElement('div')
     card.className = `kpi-card ${toneClass}`
@@ -746,16 +773,16 @@ function renderKpisAccent() {
       </div>
       <div class="kpi-card-values">
         <div class="kpi-value-block">
-          <span class="kpi-value">${formatNumber(metric.before)}${metric.unit}</span>
-          <span class="kpi-label">Before</span>
+          <span class="kpi-value"><span class="kpi-number">${formatNumber(metric.before)}</span><span class="kpi-unit">${metric.unit}</span></span>
+          <span class="kpi-label">Current FCFS</span>
         </div>
-        <div class="kpi-arrow">→</div>
+        <div class="kpi-arrow">&rarr;</div>
         <div class="kpi-value-block">
-          <span class="kpi-value">${formatNumber(metric.after)}${metric.unit}</span>
-          <span class="kpi-label">After</span>
+          <span class="kpi-value"><span class="kpi-number">${formatNumber(metric.after)}</span><span class="kpi-unit">${metric.unit}</span></span>
+          <span class="kpi-label">Simulated Priority</span>
         </div>
       </div>
-      <div class="kpi-change ${improved ? 'kpi-change-improved' : 'kpi-change-worse'}">
+      <div class="kpi-change ${changeClass}">
         <span class="kpi-change-arrow">${arrow}</span>
         <span>${changeText}</span>
       </div>
