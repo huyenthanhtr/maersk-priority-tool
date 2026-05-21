@@ -247,11 +247,29 @@ tr:hover { background: rgba(0,115,171,0.03); }
 .badge-critical { background: linear-gradient(90deg,#ffecec,#ffd6d6); color: var(--critical); }
 .badge-priority { background: linear-gradient(90deg,#fff6ea,#fff1e5); color: var(--priority); }
 .badge-standard { background: linear-gradient(90deg,#effff4,#e6fff0); color: var(--standard); }
-.status-dropdown { padding: 8px; border: 1px solid rgba(2,6,23,0.06); border-radius: 8px; cursor: pointer; font-size: 13px; background: white; font-weight: 700; min-width: 92px; }
+.status-dropdown {
+  width: 100%;
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(2,6,23,0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  background: white;
+  font-weight: 700;
+  text-align: center;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  outline: none;
+}
 .status-dropdown-met { color: #166534; background: #ecfdf3; border-color: #86efac; }
 .status-dropdown-missed { color: #b91c1c; background: #fef2f2; border-color: #fca5a5; }
+.status-dropdown:focus {
+  box-shadow: 0 0 0 3px rgba(0, 115, 171, 0.15);
+}
 .col-lead-time { width: 72px; white-space: nowrap; text-align: center; padding-left: 6px; padding-right: 6px; font-size: 12px; }
-.col-status { width: 104px; white-space: nowrap; text-align: center; padding-left: 8px; padding-right: 8px; }
+.col-status { width: 112px; white-space: nowrap; text-align: center; padding-left: 6px; padding-right: 6px; }
 .btn-accent { background: linear-gradient(90deg,#006ba8,#0088cc); color: white; border: none; padding: 10px 14px; border-radius: 10px; cursor: pointer; font-weight: 700; }
 .btn-accent:hover { filter: brightness(1.03); transform: translateY(-2px); }
 .btn-ghost { background: white; border: 1px solid rgba(2,6,23,0.06); padding: 10px 14px; border-radius: 10px; cursor: pointer; }
