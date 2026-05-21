@@ -4,7 +4,11 @@
 
 const URGENCY_SCORES = {
   'Yes': 10,
-  'No': 2
+  'No': 2,
+  'yes': 10,
+  'no': 2,
+  'urgent': 10,
+  'normal': 2
 }
 
 const REQUEST_TYPE_SCORES = {
@@ -30,8 +34,8 @@ function getETDScore(days) {
   return 2
 }
 
-function calculateScore({ urgencyFlag, urgency_flag, etdDays, lead_time_days, requestType, document_type, customerTier, customer_tier }) {
-  const urgencyValue = urgencyFlag ?? urgency_flag
+function calculateScore({ urgencyFlag, urgent_flag, urgency_flag, etdDays, lead_time_days, requestType, document_type, customerTier, customer_tier }) {
+  const urgencyValue = String(urgencyFlag ?? urgent_flag ?? urgency_flag ?? 'No').trim()
   const etdValue = etdDays ?? lead_time_days
   const requestTypeValue = requestType ?? document_type
   const customerTierValue = customerTier ?? customer_tier

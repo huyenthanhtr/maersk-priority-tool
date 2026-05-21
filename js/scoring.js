@@ -53,6 +53,10 @@ function getSelectedUrgentFlag() {
   return selected ? selected.value : 'no'
 }
 
+function isUrgentValue(value) {
+  return ['yes', 'urgent'].includes(String(value || '').trim().toLowerCase())
+}
+
 function clearValidation() {
   validationMessage.hidden = true
   validationMessage.textContent = ''
@@ -354,7 +358,7 @@ function restoreScoringState() {
   channelInput.value = saved.channel || ''
   orderNumberInput.value = saved.orderNumber || ''
   factoryVendorInput.value = saved.factoryVendor || ''
-  const urgentValue = saved.urgencyFlag === 'urgent' ? 'yes' : 'no'
+  const urgentValue = isUrgentValue(saved.urgencyFlag) ? 'yes' : 'no'
   const urgentRadio = document.querySelector(`input[name="urgentFlag"][value="${urgentValue}"]`)
   if (urgentRadio) urgentRadio.checked = true
   etdDaysInput.value = saved.etdDays ?? ''
@@ -362,7 +366,16 @@ function restoreScoringState() {
   otherNoteInput.value = saved.otherNote || ''
   toggleOtherNoteField()
 
-  currentResult = saved
+  currentResult = buildResultContext({
+    requestType: saved.requestType || '',
+    channel: saved.channel || '',
+    orderNumber: saved.orderNumber || '',
+    factoryVendor: saved.factoryVendor || '',
+    urgencyFlag: isUrgentValue(saved.urgencyFlag) ? 'urgent' : 'normal',
+    etdDays: Number(saved.etdDays) || 0,
+    customerTier: saved.customerTier || '',
+    otherNote: saved.otherNote || ''
+  })
   renderResult(currentResult)
 }
 
@@ -436,7 +449,7 @@ function createNewTicketObject(result) {
     order_reference: result.orderNumber || '',
     factory_vendor: result.factoryVendor,
     assigned_agent: result.assignedAgent,
-    urgent_flag: result.urgencyFlag === 'urgent' ? 'Yes' : 'No',
+    urgent_flag: isUrgentValue(result.urgencyFlag) ? 'Yes' : 'No',
     etd,
     lead_time_days: result.etdDays,
     assignment_delay_minutes: 0,
