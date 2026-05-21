@@ -3,10 +3,13 @@
 const scoringForm = document.getElementById('scoringForm')
 const requestTypeInput = document.getElementById('requestType')
 const channelInput = document.getElementById('channel')
+const orderNumberInput = document.getElementById('orderNumber')
 const factoryVendorInput = document.getElementById('factoryVendor')
 const vendorList = document.getElementById('vendorList')
 const etdDaysInput = document.getElementById('etdDays')
 const customerTierInput = document.getElementById('customerTier')
+const otherNoteGroup = document.getElementById('otherNoteGroup')
+const otherNoteInput = document.getElementById('otherNote')
 const validationMessage = document.getElementById('validationMessage')
 const saveButton = document.getElementById('btnSave')
 
@@ -18,9 +21,12 @@ const slaValue = document.getElementById('slaValue')
 const actionValue = document.getElementById('actionValue')
 const ticketIdValue = document.getElementById('ticketIdValue')
 const assignedAgentValue = document.getElementById('assignedAgentValue')
+const toastContainer = document.getElementById('toastContainer')
+const resetButton = document.getElementById('btnReset')
 
 const VENDOR_STORAGE_KEY = 'priorityToolVendorSuggestions'
 const AGENT_COUNTS_STORAGE_KEY = 'priorityToolAgentCounts'
+const SCORING_STATE_KEY = 'priorityToolScoringState'
 
 let ticketsData = []
 let vendorEntries = []
@@ -28,6 +34,7 @@ let vendorMap = {}
 let agentPool = []
 let currentResult = null
 let nextTicketNumber = 1001
+let toastTimer = null
 
 function normalizeText(value) {
   return String(value || '').trim()
@@ -54,6 +61,34 @@ function clearValidation() {
   customerTierInput.classList.remove('input-error')
   channelInput.classList.remove('input-error')
   factoryVendorInput.classList.remove('input-error')
+}
+
+function clearToast() {
+  if (!toastContainer) return
+  toastContainer.innerHTML = ''
+  toastContainer.classList.add('hidden')
+  if (toastTimer) {
+    clearTimeout(toastTimer)
+    toastTimer = null
+  }
+}
+
+function showToast(message) {
+  if (!toastContainer) return
+  clearToast()
+  toastContainer.classList.remove('hidden')
+
+  const toast = document.createElement('div')
+  toast.className = 'toast-message show weak'
+  toast.textContent = message
+  toastContainer.appendChild(toast)
+
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('show')
+    toastTimer = setTimeout(() => {
+      clearToast()
+    }, 240)
+  }, 3200)
 }
 
 function showValidation(message, field) {
@@ -188,10 +223,12 @@ function getDraftTicketId() {
 function validateForm() {
   const requestType = requestTypeInput.value
   const channel = channelInput.value
+  const orderNumber = normalizeText(orderNumberInput.value)
   const factoryVendor = normalizeText(factoryVendorInput.value)
   const urgentFlagValue = getSelectedUrgentFlag()
   const etdRawValue = etdDaysInput.value.trim()
   const customerTier = customerTierInput.value
+  const otherNote = normalizeText(otherNoteInput.value)
 
   if (!channel) {
     showValidation('Please select the case channel before calculating the score.', channelInput)
@@ -205,6 +242,11 @@ function validateForm() {
 
   if (!requestType) {
     showValidation('Please select a request type before calculating the score.', requestTypeInput)
+    return null
+  }
+
+  if (requestType === 'Other' && !otherNote) {
+    showValidation('Please describe the request when Other is selected.', otherNoteInput)
     return null
   }
 
@@ -232,10 +274,12 @@ function validateForm() {
   return {
     requestType,
     channel,
+    orderNumber,
     factoryVendor,
     urgencyFlag: urgentFlagValue === 'yes' ? 'urgent' : 'normal',
     etdDays,
-    customerTier
+    customerTier,
+    otherNote
   }
 }
 
@@ -251,6 +295,84 @@ function getLaneCaption(lane) {
   }
 
   return map[lane]
+}
+
+function saveScoringState(state) {
+  try {
+    localStorage.setItem(SCORING_STATE_KEY, JSON.stringify(state))
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function loadScoringState() {
+  try {
+    const stored = localStorage.getItem(SCORING_STATE_KEY)
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+}
+
+function clearScoringState() {
+  localStorage.removeItem(SCORING_STATE_KEY)
+}
+
+function clearResultDisplay() {
+  scoreValue.textContent = '--'
+  laneBadge.textContent = 'Waiting for input'
+  laneBadge.className = 'badge badge-placeholder'
+  laneCaption.textContent = 'Complete the form to see the recommended routing lane.'
+  slaValue.textContent = '--'
+  actionValue.textContent = 'Fill in the case details and calculate the score to view the recommended next step.'
+  ticketIdValue.textContent = '--'
+  assignedAgentValue.textContent = '--'
+  updateResultState()
+  saveButton.disabled = true
+  saveButton.textContent = 'Save Case'
+  clearToast()
+}
+
+function toggleOtherNoteField() {
+  if (requestTypeInput.value === 'Other') {
+    otherNoteGroup.classList.remove('hidden')
+  } else {
+    otherNoteGroup.classList.add('hidden')
+    otherNoteInput.value = ''
+  }
+}
+
+function restoreScoringState() {
+  const saved = loadScoringState()
+  if (!saved) {
+    clearResultDisplay()
+    toggleOtherNoteField()
+    return
+  }
+
+  requestTypeInput.value = saved.requestType || ''
+  channelInput.value = saved.channel || ''
+  orderNumberInput.value = saved.orderNumber || ''
+  factoryVendorInput.value = saved.factoryVendor || ''
+  const urgentValue = saved.urgencyFlag === 'urgent' ? 'yes' : 'no'
+  const urgentRadio = document.querySelector(`input[name="urgentFlag"][value="${urgentValue}"]`)
+  if (urgentRadio) urgentRadio.checked = true
+  etdDaysInput.value = saved.etdDays ?? ''
+  customerTierInput.value = saved.customerTier || ''
+  otherNoteInput.value = saved.otherNote || ''
+  toggleOtherNoteField()
+
+  currentResult = saved
+  renderResult(currentResult)
+}
+
+function resetFormAndResult() {
+  scoringForm.reset()
+  clearValidation()
+  otherNoteGroup.classList.add('hidden')
+  clearResultDisplay()
+  currentResult = null
+  clearScoringState()
 }
 
 function updateResultState(lane) {
@@ -295,6 +417,8 @@ function renderResult(data) {
   updateResultState(data.lane)
   saveButton.disabled = false
   saveButton.textContent = 'Save Case'
+  saveScoringState(data)
+  showToast('Calculation completed. Latest score is shown above.')
 }
 
 function createNewTicketObject(result) {
@@ -309,6 +433,7 @@ function createNewTicketObject(result) {
     created_at: createdAt,
     channel: result.channel,
     document_type: result.requestType,
+    order_reference: result.orderNumber || '',
     factory_vendor: result.factoryVendor,
     assigned_agent: result.assignedAgent,
     urgent_flag: result.urgencyFlag === 'urgent' ? 'Yes' : 'No',
@@ -325,6 +450,7 @@ function createNewTicketObject(result) {
     total_resolution_hours: 0,
     csat: '',
     breach_reason: '',
+    other_note: result.otherNote || '',
     customer_tier: result.customerTier
   }
 }
@@ -425,6 +551,7 @@ function updateCustomerTierFromVendor() {
 
 function initPage() {
   Promise.all([loadTicketData(), loadVendorData(), loadAgentData()])
+    .then(() => restoreScoringState())
     .catch(() => {
       validationMessage.hidden = false
       validationMessage.textContent = 'Unable to load initial data. Please open the page from a server or check your file paths.'
@@ -433,6 +560,8 @@ function initPage() {
 
 factoryVendorInput.addEventListener('blur', updateCustomerTierFromVendor)
 factoryVendorInput.addEventListener('change', updateCustomerTierFromVendor)
+requestTypeInput.addEventListener('change', toggleOtherNoteField)
+resetButton.addEventListener('click', resetFormAndResult)
 
 saveButton.addEventListener('click', saveCurrentResult)
 

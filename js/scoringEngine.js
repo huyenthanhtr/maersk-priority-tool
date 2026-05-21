@@ -30,11 +30,16 @@ function getETDScore(days) {
   return 2
 }
 
-function calculateScore({ urgent_flag, lead_time_days, document_type, customer_tier }) {
-  const c1 = URGENCY_SCORES[urgent_flag] ?? 2
-  const c2 = getETDScore(Number(lead_time_days))
-  const c3 = REQUEST_TYPE_SCORES[document_type] ?? 6
-  const c4 = CUSTOMER_TIER_SCORES[customer_tier] ?? 3
+function calculateScore({ urgencyFlag, urgency_flag, etdDays, lead_time_days, requestType, document_type, customerTier, customer_tier }) {
+  const urgencyValue = urgencyFlag ?? urgency_flag
+  const etdValue = etdDays ?? lead_time_days
+  const requestTypeValue = requestType ?? document_type
+  const customerTierValue = customerTier ?? customer_tier
+
+  const c1 = URGENCY_SCORES[urgencyValue] ?? 2
+  const c2 = getETDScore(Number(etdValue))
+  const c3 = REQUEST_TYPE_SCORES[requestTypeValue] ?? 2
+  const c4 = CUSTOMER_TIER_SCORES[customerTierValue] ?? 3
 
   const score = (c1 * 10 * 0.35)
               + (c2 * 10 * 0.30)
