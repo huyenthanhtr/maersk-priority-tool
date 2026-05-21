@@ -38,6 +38,12 @@ function formatDateTime(dateTime) {
   return `${day}/${month}/${year} ${hour}:${minute}`
 }
 
+function getStatusClass(status) {
+  if (status === 'Met') return 'status-dropdown status-dropdown-met'
+  if (status === 'Missed') return 'status-dropdown status-dropdown-missed'
+  return 'status-dropdown'
+}
+
 // Load and process tickets
 async function loadTickets() {
   try {
@@ -202,14 +208,14 @@ function renderPage(page) {
         <td>${formatDateTime(t.created_at)}</td>
         <td>${escapeHtml(t.document_type)}</td>
         <td>${urgencyLabel}</td>
-        <td>${t.lead_time_days}</td>
+        <td class="col-lead-time">${t.lead_time_days}</td>
         <td>${t.customer_tier}</td>
         <td class="score-cell"><strong>${t.priority_score}</strong></td>
         <td><span class="badge ${badgeClass}">${t.lane}</span></td>
         <td>${t.sla_target}</td>
         <td>${t.first_response_time_hours.toFixed(2)}</td>
-        <td>
-          <select class="status-dropdown" onchange="updateStatus('${t.ticket_id}', this.value)">
+        <td class="col-status">
+          <select class="${getStatusClass(t.sla_status)}" onchange="updateStatus('${t.ticket_id}', this.value); this.className = getStatusClass(this.value);">
             <option value="Met" ${t.sla_status === 'Met' ? 'selected' : ''}>Met</option>
             <option value="Missed" ${t.sla_status === 'Missed' ? 'selected' : ''}>Missed</option>
           </select>
