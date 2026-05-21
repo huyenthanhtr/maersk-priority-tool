@@ -48,7 +48,7 @@
         <form id="scoringForm" novalidate>
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label" for="requestType">Request Type</label>
+              <label class="form-label" for="requestType">Request Type<span class="required-marker" aria-hidden="true">*</span></label>
               <select class="form-select" id="requestType" name="requestType" required>
                 <option value="" selected disabled>Select request type</option>
                 <option value="B/L Amendment">B/L Amendment</option>
@@ -65,7 +65,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="channel">Channel</label>
+              <label class="form-label" for="channel">Channel<span class="required-marker" aria-hidden="true">*</span></label>
               <select class="form-select" id="channel" name="channel" required>
                 <option value="" selected disabled>Select case channel</option>
                 <option value="Case Processing System">Case Processing System</option>
@@ -87,7 +87,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="factoryVendor">Factory / Vendor</label>
+              <label class="form-label" for="factoryVendor">Factory / Vendor<span class="required-marker" aria-hidden="true">*</span></label>
               <input
                 class="form-input"
                 id="factoryVendor"
@@ -123,7 +123,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="etdDays">ETD Remaining (days)</label>
+              <label class="form-label" for="etdDays">ETD Remaining (days)<span class="required-marker" aria-hidden="true">*</span></label>
               <input
                 class="form-input"
                 id="etdDays"
@@ -139,7 +139,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="customerTier">Customer Tier</label>
+              <label class="form-label" for="customerTier">Customer Tier<span class="required-marker" aria-hidden="true">*</span></label>
               <select class="form-select" id="customerTier" name="customerTier" required>
                 <option value="" selected disabled>Select customer tier</option>
                 <option value="Key Account">Key Account</option>
@@ -148,7 +148,7 @@
               </select>
             </div>
             <div class="form-group form-group-full hidden" id="otherNoteGroup">
-              <label class="form-label" for="otherNote">Other request description</label>
+              <label class="form-label" for="otherNote">Other request description<span class="required-marker" aria-hidden="true">*</span></label>
               <textarea
                 class="form-input form-textarea"
                 id="otherNote"
@@ -186,9 +186,11 @@
           </div>
 
           <div class="lane-panel">
-            <div class="summary-label">Routing Lane</div>
-            <div class="lane-badge-wrap">
-              <span class="badge badge-placeholder" id="laneBadge">Waiting for input</span>
+            <div class="lane-header">
+              <div class="summary-label">Routing Lane</div>
+              <div class="lane-badge-wrap">
+                <span class="badge badge-placeholder" id="laneBadge">Waiting for input</span>
+              </div>
             </div>
             <div class="lane-caption" id="laneCaption">
               Complete the form to see the recommended routing lane.
