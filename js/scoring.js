@@ -356,24 +356,41 @@ async function saveCurrentResult() {
 
   assignAgentForLane(currentResult.lane)
 
+  // Try server save, fallback to localStorage + dispatch event for UI sync
   try {
     await saveTicketsToServer(newTicket)
-
-    ticketsData = Array.isArray(ticketsData)
-      ? [...ticketsData, newTicket]
-      : [newTicket]
-
-    refreshNextTicketNumber()
-
-    saveButton.disabled = true
-    saveButton.textContent = 'Saved Successfully'
-
-    alert('Ticket saved into tickets.json!')
   } catch (error) {
-    console.error(error)
-
-    alert('Failed to save ticket to server.')
+    // server not available — persist locally
+    try {
+      const key = 'localTickets'
+      const stored = localStorage.getItem(key)
+      const arr = stored ? JSON.parse(stored) : []
+      arr.push(newTicket)
+      localStorage.setItem(key, JSON.stringify(arr))
+      console.warn('Saved ticket to localStorage fallback')
+    } catch (err) {
+      console.error('Failed to persist ticket locally', err)
+      alert('Failed to save ticket to server or local storage.')
+      return
+    }
   }
+
+  // Update in-memory ticketsData and next id
+  ticketsData = Array.isArray(ticketsData) ? [...ticketsData, newTicket] : [newTicket]
+  refreshNextTicketNumber()
+
+  // Disable save button and give feedback
+  saveButton.disabled = true
+  saveButton.textContent = 'Saved Successfully'
+
+  // Notify other pages (queue/dashboard) to reload
+  try {
+    window.dispatchEvent(new CustomEvent('ticketsUpdated', { detail: { ticket: newTicket } }))
+  } catch (e) {
+    // ignore
+  }
+
+  alert('Ticket saved.')
 }
 
 function loadVendorData() {

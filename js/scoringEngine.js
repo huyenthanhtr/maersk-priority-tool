@@ -3,21 +3,17 @@
 // Based on Priority Rule Matrix 
 
 const URGENCY_SCORES = {
-  urgent: 10,
-  semi_urgent: 6,
-  normal: 2
+  'Yes': 10,
+  'No': 2
 }
 
 const REQUEST_TYPE_SCORES = {
-  'B/L Amendment': 10,
-  'FCR': 10,
-  'Inspection Certificate': 9,
-  'Quarantine Documents': 9,
+  'B/L': 10,
+  'Packing List': 8,
   'COO': 8,
-  'Packing List': 7,
   'Invoice': 6,
-  'System Support': 3,
-  'General Inquiry': 2
+  'Inspection Certificate': 9,
+  'Quarantine Documents': 9
 }
 
 const CUSTOMER_TIER_SCORES = {
@@ -34,11 +30,11 @@ function getETDScore(days) {
   return 2
 }
 
-function calculateScore({ urgencyFlag, etdDays, requestType, customerTier }) {
-  const c1 = URGENCY_SCORES[urgencyFlag] ?? 2
-  const c2 = getETDScore(Number(etdDays))
-  const c3 = REQUEST_TYPE_SCORES[requestType] ?? 2
-  const c4 = CUSTOMER_TIER_SCORES[customerTier] ?? 3
+function calculateScore({ urgent_flag, lead_time_days, document_type, customer_tier }) {
+  const c1 = URGENCY_SCORES[urgent_flag] ?? 2
+  const c2 = getETDScore(Number(lead_time_days))
+  const c3 = REQUEST_TYPE_SCORES[document_type] ?? 6
+  const c4 = CUSTOMER_TIER_SCORES[customer_tier] ?? 3
 
   const score = (c1 * 10 * 0.35)
               + (c2 * 10 * 0.30)

@@ -6,6 +6,7 @@
   <title>Case Queue | Maersk Priority Routing Tool</title>
   <link rel="stylesheet" href="../css/global.css" />
   <link rel="stylesheet" href="../css/queue.css" />
+  
 </head>
 <body>
 
@@ -31,7 +32,7 @@
     <!-- HEADER -->
     <div class="page-header">
       <h1 class="page-title">Case Queue</h1>
-      <p class="page-subtitle">50 sample tickets sorted by Priority Score — highest priority first</p>
+      <p class="page-subtitle">Real-time case list sorted by Priority Score — manage and track all incoming tickets</p>
     </div>
 
     <!-- LANE BADGES -->
@@ -39,17 +40,17 @@
       <div class="lane-card lane-card-critical">
         <div class="lane-card-count" id="countCritical">—</div>
         <div class="lane-card-label">Critical</div>
-        <div class="lane-card-sla">SLA: 1 working hour</div>
+        <div class="lane-card-sla">SLA: 1h</div>
       </div>
       <div class="lane-card lane-card-priority">
         <div class="lane-card-count" id="countPriority">—</div>
         <div class="lane-card-label">Priority</div>
-        <div class="lane-card-sla">SLA: 2 working hours</div>
+        <div class="lane-card-sla">SLA: 2h</div>
       </div>
       <div class="lane-card lane-card-standard">
         <div class="lane-card-count" id="countStandard">—</div>
         <div class="lane-card-label">Standard</div>
-        <div class="lane-card-sla">SLA: 4 working hours</div>
+        <div class="lane-card-sla">SLA: 4h</div>
       </div>
       <div class="lane-card lane-card-total">
         <div class="lane-card-count" id="countTotal">—</div>
@@ -61,35 +62,53 @@
     <!-- FILTER BAR -->
     <div class="card filter-bar">
       <div class="filter-group">
+        <label class="form-label">Search</label>
+        <input id="filterSearch" class="form-input" placeholder="Search ticket ID, vendor, agent..." />
+      </div>
+      <div class="filter-group">
         <label class="form-label">Lane</label>
         <select class="form-select" id="filterLane">
-          <option value="all">All Lanes</option>
+          <option value="">All Lanes</option>
           <option value="Critical">Critical</option>
           <option value="Priority">Priority</option>
           <option value="Standard">Standard</option>
         </select>
       </div>
       <div class="filter-group">
-        <label class="form-label">Request Type</label>
+        <label class="form-label">Urgency</label>
+        <select class="form-select" id="filterUrgency">
+          <option value="">All</option>
+          <option value="Yes">Urgent</option>
+          <option value="No">Normal</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="form-label">Document Type</label>
         <select class="form-select" id="filterType">
-          <option value="all">All Types</option>
-          <option value="B/L Amendment">B/L Amendment</option>
-          <option value="FCR">FCR</option>
-          <option value="Inspection Certificate">Inspection Certificate</option>
-          <option value="COO">COO</option>
+          <option value="">All Types</option>
+          <option value="B/L">B/L</option>
           <option value="Packing List">Packing List</option>
+          <option value="COO">COO</option>
           <option value="Invoice">Invoice</option>
+          <option value="Inspection Certificate">Inspection Certificate</option>
+          <option value="Quarantine Documents">Quarantine Documents</option>
         </select>
       </div>
       <div class="filter-group">
         <label class="form-label">SLA Status</label>
         <select class="form-select" id="filterStatus">
-          <option value="all">All</option>
+          <option value="">All</option>
           <option value="Met">Met</option>
           <option value="Missed">Missed</option>
         </select>
       </div>
-      <button class="btn btn-secondary" id="btnReset">Reset Filters</button>
+      <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end; grid-column: span 1;">
+        <div class="auto-refresh">Auto-refresh: <strong id="autoInterval">30s</strong></div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-accent" id="btnExport">Export CSV</button>
+          <button class="btn-ghost" id="btnReset" style="align-self: center;">Reset</button>
+        </div>
+      </div>
     </div>
 
     <!-- RESULT COUNT -->
@@ -101,23 +120,29 @@
         <thead>
           <tr>
             <th>Ticket ID</th>
-            <th>Request Type</th>
-            <th>Urgent Flag</th>
-            <th>ETD (days)</th>
+              <th>Vendor</th>
+            <th>Created Date/Time</th>
+            <th>Document Type</th>
+            <th>Urgent</th>
+            <th>Lead Time (days)</th>
             <th>Customer Tier</th>
             <th>Priority Score</th>
             <th>Lane</th>
             <th>SLA Target</th>
+            <th>FRT (h)</th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody id="queueBody">
           <tr>
-            <td colspan="9" class="loading-text">Loading tickets...</td>
+            <td colspan="12" class="loading-text">Loading tickets...</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- PAGINATION -->
+    <div class="pagination" id="pagination"></div>
 
   </div>
 

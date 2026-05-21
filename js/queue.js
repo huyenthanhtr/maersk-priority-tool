@@ -1,183 +1,382 @@
-// queue.js - Case Queue Page Logic
+// queue.js - Case Queue Page (Page 3) Logic
+// Real-time case list with filtering, pagination, and status management
 
 let allTickets = []
+let filteredTickets = []
+let currentPage = 1
+const ITEMS_PER_PAGE = 20
+let _autoRefreshInterval = 15000 // 15 seconds
+let _autoRefreshHandle = null
+let _isLoading = false
 
-const DOCUMENT_TYPE_MAP = {
-  'B/L': 'B/L Amendment'
+// Get SLA target based on lane
+function getSLATarget(lane) {
+  return lane === 'Critical' ? '1h' : lane === 'Priority' ? '2h' : '4h'
 }
 
-const VENDOR_TIER_MAP = {
-  'MekongRice Export': 'Key Account',
-  'Hanoi Textile Ltd': 'Key Account',
-  'SunFurniture Corp': 'Key Account',
-  'PhuMy Plastics': 'Standard',
-  'VN Rubber Co.': 'Standard',
-  'VinaTech Components': 'Standard',
-  'SaiGon Foam Co.': 'Occasional',
-  'EcoWood Vietnam': 'Occasional',
-  'Delta Seafood': 'Occasional',
-  'Viet Tin Garment': 'Occasional'
+// escape HTML for safe rendering
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 
+// Classify lane based on priority score
+function getLane(score) {
+  if (score >= 70) return 'Critical'
+  if (score >= 40) return 'Priority'
+  return 'Standard'
+}
+
+// Format date/time from created_at
+function formatDateTime(dateTime) {
+  const match = String(dateTime || '').match(/^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2})/)
+  if (!match) return '-'
+  const [, year, month, day, hour, minute] = match
+  return `${day}/${month}/${year} ${hour}:${minute}`
+}
+
+// Load and process tickets
 async function loadTickets() {
-  const res = await fetch('../data/tickets.json')
-  const data = await res.json()
-  const tickets = Array.isArray(data) ? data : data.tickets
+  try {
+    if (_isLoading) return
+    _isLoading = true
+    // Load base dataset
+    let tickets = []
+    // Prefer server endpoint if available so persisted tickets are loaded
+    try {
+      const resApi = await fetch('/api/tickets')
+      if (resApi && resApi.ok) {
+        const dataApi = await resApi.json()
+        tickets = Array.isArray(dataApi) ? dataApi : dataApi.tickets || []
+      } else {
+        // fallback to static JSON file if API not available
+        const res = await fetch('../data/tickets.json')
+        const data = await res.json()
+        tickets = data.tickets || []
+      }
+    } catch (e) {
+      console.warn('Could not load tickets from server or static file, proceeding with local tickets only', e)
+    }
 
-  allTickets = tickets.map(ticket => {
-    const normalizedTicket = normalizeTicket(ticket)
-    const score = calculateScore({
-      urgencyFlag: normalizedTicket.urgencyFlag,
-      etdDays: normalizedTicket.etdDays,
-      requestType: normalizedTicket.requestType,
-      customerTier: normalizedTicket.customerTier
+    // Load locally saved tickets (from scoring page fallback)
+    try {
+      const stored = localStorage.getItem('localTickets')
+      const local = stored ? JSON.parse(stored) : []
+      // merge by ticket_id, prefer local newer entries
+      const map = {}
+      tickets.forEach(t => { map[t.ticket_id || t.id] = t })
+      local.forEach(t => { map[t.ticket_id || t.id] = t })
+      tickets = Object.values(map)
+    } catch (e) {
+      console.warn('Failed to read local tickets', e)
+    }
+
+    allTickets = tickets.map(ticket => {
+      // Calculate priority score using scoringEngine (normalize fields if needed)
+      const urgent = ticket.urgent_flag || ticket.urgentFlag || 'No'
+      const lead = ticket.lead_time_days || ticket.lead_time_days === 0 ? ticket.lead_time_days : ticket.lead_time_days
+      const doc = ticket.document_type || ticket.requestType || ticket.documentType || 'General Inquiry'
+      const cust = ticket.customer_tier || ticket.customerTier || ticket.customer_tier || 'Standard'
+
+      const score = calculateScore({
+        urgent_flag: urgent,
+        lead_time_days: lead,
+        document_type: doc,
+        customer_tier: cust
+      })
+
+        const createdTs = ticket.created_at ? Date.parse(ticket.created_at.replace(' ', 'T')) : Date.now()
+
+        return {
+          ticket_id: ticket.ticket_id || ticket.id || ticket.TKT,
+          created_at: ticket.created_at,
+          _created_ts: Number.isFinite(createdTs) ? createdTs : Date.now(),
+          factory_vendor: ticket.factory_vendor || ticket.factoryVendor || ticket.vendor || '',
+          document_type: doc,
+          urgent_flag: urgent,
+          lead_time_days: Number(ticket.lead_time_days) || 0,
+          customer_tier: cust,
+          priority_score: score,
+          lane: getLane(score),
+          sla_target: getSLATarget(getLane(score)),
+          first_response_time_hours: Number(ticket.first_response_time_hours) || 0,
+          sla_status: ticket.sla_status || ticket.status || 'Met',
+          assigned_agent: ticket.assigned_agent || ticket.assignedPIC || ''
+        }
     })
-    const lane = getLane(score)
-    const sla = getSLA(lane)
-    return { ...normalizedTicket, score, lane, sla }
-  })
 
-  allTickets.sort((a, b) => b.score - a.score)
-  updateLaneCounts(allTickets)
-  renderTable(allTickets)
-}
+      // Sort by created_at (newest first), fallback to priority score
+      allTickets.sort((a, b) => {
+        if (b._created_ts !== a._created_ts) return b._created_ts - a._created_ts
+        return b.priority_score - a.priority_score
+      })
 
-function normalizeTicket(ticket) {
-  const requestType = ticket.requestType || getRequestType(ticket.document_type)
-  const customerTier = ticket.customerTier
-                    || ticket.customer_tier
-                    || VENDOR_TIER_MAP[ticket.factory_vendor]
-                    || 'Standard'
-  const etdDays = Number.isFinite(Number(ticket.etdDays))
-                ? Number(ticket.etdDays)
-                : getETDDays(ticket.created_at, ticket.etd)
-
-  return {
-    ...ticket,
-    id: ticket.id || ticket.ticket_id,
-    requestType,
-    urgencyFlag: ticket.urgencyFlag || getUrgencyFlag(ticket.urgent_flag),
-    etdDays,
-    customerTier,
-    assignedPIC: ticket.assignedPIC || ticket.assigned_agent,
-    createdTime: ticket.createdTime || getTime(ticket.created_at),
-    firstResponseTime: ticket.firstResponseTime || getTime(ticket.first_response_at),
-    status: ticket.status || getStatus(ticket.sla_status)
+    // Initialize filtering
+    filteredTickets = [...allTickets]
+    updateLaneCounts()
+    renderPage(1)
+    setupPagination()
+    _isLoading = false
+  } catch (error) {
+    console.error('Error loading tickets:', error)
+    document.getElementById('queueBody').innerHTML = 
+      `<tr><td colspan="12" class="loading-text">Error loading tickets</td></tr>`
+    _isLoading = false
   }
 }
 
-function getRequestType(documentType) {
-  return DOCUMENT_TYPE_MAP[documentType] || documentType || 'General Inquiry'
-}
-
-function getUrgencyFlag(urgentFlag) {
-  return urgentFlag === 'Yes' ? 'urgent' : 'normal'
-}
-
-function getStatus(slaStatus) {
-  return slaStatus === 'Breached' ? 'Missed' : slaStatus || 'Met'
-}
-
-function getTime(dateTime) {
-  const match = String(dateTime || '').match(/(\d{2}:\d{2})$/)
-  return match ? match[1] : ''
-}
-
-function getDateUTC(dateValue) {
-  const match = String(dateValue || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
-  if (!match) return null
-
-  const year = Number(match[1])
-  const month = Number(match[2]) - 1
-  const day = Number(match[3])
-  return Date.UTC(year, month, day)
-}
-
-function getETDDays(createdAt, etd) {
-  const createdDate = getDateUTC(createdAt)
-  const etdDate = getDateUTC(etd)
-
-  if (createdDate === null || etdDate === null) return 0
-
-  const days = Math.round((etdDate - createdDate) / 86400000)
-  return Math.max(0, days)
-}
-
-function updateLaneCounts(tickets) {
+// Update lane count badges
+function updateLaneCounts() {
   document.getElementById('countCritical').textContent =
-    tickets.filter(t => t.lane === 'Critical').length
+    filteredTickets.filter(t => t.lane === 'Critical').length
   document.getElementById('countPriority').textContent =
-    tickets.filter(t => t.lane === 'Priority').length
+    filteredTickets.filter(t => t.lane === 'Priority').length
   document.getElementById('countStandard').textContent =
-    tickets.filter(t => t.lane === 'Standard').length
-  document.getElementById('countTotal').textContent = tickets.length
+    filteredTickets.filter(t => t.lane === 'Standard').length
+  document.getElementById('countTotal').textContent = filteredTickets.length
 }
 
-function renderTable(tickets) {
-  const tbody = document.getElementById('queueBody')
-  document.getElementById('resultInfo').textContent =
-    `Showing ${tickets.length} of ${allTickets.length} tickets`
+// Apply all filters
+function applyFilters() {
+  const lane = document.getElementById('filterLane').value
+  const urgency = document.getElementById('filterUrgency').value
+  const type = document.getElementById('filterType').value
+  const status = document.getElementById('filterStatus').value
+  const search = document.getElementById('filterSearch') ? document.getElementById('filterSearch').value.trim().toLowerCase() : ''
 
-  if (tickets.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="loading-text">No tickets match the selected filters.</td></tr>`
+  filteredTickets = allTickets.filter(ticket => {
+    if (lane && ticket.lane !== lane) return false
+    if (urgency && ticket.urgent_flag !== urgency) return false
+    if (type && ticket.document_type !== type) return false
+    if (status && ticket.sla_status !== status) return false
+    if (search) {
+      const hay = [ticket.ticket_id, ticket.document_type, ticket.assigned_agent, ticket.customer_tier, ticket.created_at, ticket.factory_vendor].join(' ').toLowerCase()
+      if (!hay.includes(search)) return false
+    }
+    return true
+  })
+
+  currentPage = 1
+  updateLaneCounts()
+  renderPage(1)
+  setupPagination()
+}
+
+// Render table for current page
+function renderPage(page) {
+  const start = (page - 1) * ITEMS_PER_PAGE
+  const end = start + ITEMS_PER_PAGE
+  const pageTickets = filteredTickets.slice(start, end)
+
+  const tbody = document.getElementById('queueBody')
+  
+  // Update result info
+  const total = filteredTickets.length
+  const showing = Math.min(ITEMS_PER_PAGE, total - start)
+  document.getElementById('resultInfo').textContent =
+    `Showing ${start + 1}–${start + showing} of ${total} tickets`
+
+  if (pageTickets.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="12" class="loading-text">No tickets match the selected filters.</td></tr>`
     return
   }
 
-  tbody.innerHTML = tickets.map(t => {
+  tbody.innerHTML = pageTickets.map(t => {
     const rowClass = t.lane === 'Critical' ? 'row-critical'
                    : t.lane === 'Priority' ? 'row-priority'
                    : 'row-standard'
 
-    const urgencyLabel = t.urgencyFlag === 'urgent' ? 'Urgent'
-                       : t.urgencyFlag === 'semi_urgent' ? 'Semi-urgent'
-                       : 'Normal'
+    const badgeClass = t.lane === 'Critical' ? 'badge-critical'
+                     : t.lane === 'Priority' ? 'badge-priority'
+                     : 'badge-standard'
 
-    const urgencyClass = t.urgencyFlag === 'urgent' ? 'urgency-urgent'
-                       : t.urgencyFlag === 'semi_urgent' ? 'urgency-semi'
-                       : 'urgency-normal'
-
-    const badgeClass = getLaneBadgeClass(t.lane)
-    const statusClass = t.status === 'Met' ? 'status-met' : 'status-missed'
+    const urgencyLabel = t.urgent_flag === 'Yes' ? 'Yes' : 'No'
 
     return `
       <tr class="${rowClass}">
-        <td><strong>${t.id}</strong></td>
-        <td>${t.requestType}</td>
-        <td class="${urgencyClass}">${urgencyLabel}</td>
-        <td>${t.etdDays} day${t.etdDays === 1 ? '' : 's'}</td>
-        <td>${t.customerTier}</td>
-        <td class="score-cell">${t.score}</td>
+        <td><strong>${t.ticket_id}</strong></td>
+        <td>${escapeHtml(t.factory_vendor || '')}</td>
+        <td>${formatDateTime(t.created_at)}</td>
+        <td>${escapeHtml(t.document_type)}</td>
+        <td>${urgencyLabel}</td>
+        <td>${t.lead_time_days}</td>
+        <td>${t.customer_tier}</td>
+        <td class="score-cell"><strong>${t.priority_score}</strong></td>
         <td><span class="badge ${badgeClass}">${t.lane}</span></td>
-        <td>${t.sla}</td>
-        <td class="${statusClass}">${t.status}</td>
+        <td>${t.sla_target}</td>
+        <td>${t.first_response_time_hours.toFixed(2)}</td>
+        <td>
+          <select class="status-dropdown" onchange="updateStatus('${t.ticket_id}', this.value)">
+            <option value="Met" ${t.sla_status === 'Met' ? 'selected' : ''}>Met</option>
+            <option value="Missed" ${t.sla_status === 'Missed' ? 'selected' : ''}>Missed</option>
+          </select>
+        </td>
       </tr>
     `
   }).join('')
+
+  currentPage = page
 }
 
-function applyFilters() {
-  const lane = document.getElementById('filterLane').value
-  const type = document.getElementById('filterType').value
-  const status = document.getElementById('filterStatus').value
+// Setup pagination buttons
+function setupPagination() {
+  const totalPages = Math.ceil(filteredTickets.length / ITEMS_PER_PAGE)
+  const pagination = document.getElementById('pagination')
+  pagination.innerHTML = ''
 
-  let filtered = allTickets
+  if (totalPages <= 1) return
 
-  if (lane !== 'all') filtered = filtered.filter(t => t.lane === lane)
-  if (type !== 'all') filtered = filtered.filter(t => t.requestType === type)
-  if (status !== 'all') filtered = filtered.filter(t => t.status === status)
+  // Previous button
+  if (currentPage > 1) {
+    const prev = document.createElement('button')
+    prev.textContent = '← Previous'
+    prev.onclick = () => {
+      renderPage(currentPage - 1)
+      setupPagination()
+    }
+    pagination.appendChild(prev)
+  }
 
-  renderTable(filtered)
+  // Page numbers
+  for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+    const btn = document.createElement('button')
+    btn.textContent = i
+    btn.className = i === currentPage ? 'active' : ''
+    btn.onclick = () => {
+      renderPage(i)
+      setupPagination()
+    }
+    pagination.appendChild(btn)
+  }
+
+  // Next button
+  if (currentPage < totalPages) {
+    const next = document.createElement('button')
+    next.textContent = 'Next →'
+    next.onclick = () => {
+      renderPage(currentPage + 1)
+      setupPagination()
+    }
+    pagination.appendChild(next)
+  }
 }
 
+// Update ticket status
+function updateStatus(ticketId, newStatus) {
+  const ticket = allTickets.find(t => t.ticket_id === ticketId)
+  if (ticket) {
+    ticket.sla_status = newStatus
+    console.log(`Ticket ${ticketId} status updated to: ${newStatus}`)
+
+    // Persist status change to localTickets if present
+    try {
+      const key = 'localTickets'
+      const stored = localStorage.getItem(key)
+      const arr = stored ? JSON.parse(stored) : []
+      const idx = arr.findIndex(t => (t.ticket_id || t.id) === ticketId)
+      if (idx >= 0) {
+        arr[idx].sla_status = newStatus
+      } else {
+        // if not local, add a small patch record
+        arr.push({ ticket_id: ticketId, sla_status: newStatus })
+      }
+      localStorage.setItem(key, JSON.stringify(arr))
+    } catch (e) {
+      console.warn('Failed to persist status change locally', e)
+    }
+  }
+}
+
+// Export currently filtered tickets to CSV
+function exportCsv() {
+  const rows = filteredTickets.map(t => ({
+    ticket_id: t.ticket_id,
+    created_at: t.created_at,
+    document_type: t.document_type,
+    urgent_flag: t.urgent_flag,
+    lead_time_days: t.lead_time_days,
+    customer_tier: t.customer_tier,
+    priority_score: t.priority_score,
+    lane: t.lane,
+    sla_target: t.sla_target,
+    first_response_time_hours: t.first_response_time_hours,
+    sla_status: t.sla_status
+  }))
+
+  const header = Object.keys(rows[0] || {}).join(',')
+  const csv = [header, ...rows.map(r => Object.values(r).map(v => `"${String(v || '')}"`).join(','))].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `cases_export_${new Date().toISOString().slice(0,10)}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+// Listen for ticketsUpdated (from scoring page)
+window.addEventListener('ticketsUpdated', event => {
+  // when notified, reload tickets fully so created timestamps and vendor fields are recalculated
+  try {
+    loadTickets().then(() => {
+      try { applyFilters(); setupPagination() } catch (e) {}
+    })
+  } catch (e) {
+    console.warn('Failed to reload tickets after update', e)
+  }
+})
+
+// wire export and search
+document.getElementById('filterSearch')?.addEventListener('input', applyFilters)
+document.getElementById('btnExport')?.addEventListener('click', exportCsv)
+
+// Event listeners
 document.getElementById('filterLane').addEventListener('change', applyFilters)
+document.getElementById('filterUrgency').addEventListener('change', applyFilters)
 document.getElementById('filterType').addEventListener('change', applyFilters)
 document.getElementById('filterStatus').addEventListener('change', applyFilters)
 
 document.getElementById('btnReset').addEventListener('click', () => {
-  document.getElementById('filterLane').value = 'all'
-  document.getElementById('filterType').value = 'all'
-  document.getElementById('filterStatus').value = 'all'
-  renderTable(allTickets)
+  document.getElementById('filterLane').value = ''
+  document.getElementById('filterUrgency').value = ''
+  document.getElementById('filterType').value = ''
+  document.getElementById('filterStatus').value = ''
+  applyFilters()
 })
 
-loadTickets()
+// Load on page ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadTickets)
+} else {
+  loadTickets()
+}
+
+// Start auto-refresh to reload tickets every 30s (keeps UI up-to-date)
+function startAutoRefresh() {
+  if (_autoRefreshHandle) return
+  _autoRefreshHandle = setInterval(() => {
+    // reload tickets silently and reapply filters
+    loadTickets().then(() => {
+      try { applyFilters(); setupPagination(); } catch(e){}
+    })
+  }, _autoRefreshInterval)
+}
+
+function stopAutoRefresh() {
+  if (_autoRefreshHandle) {
+    clearInterval(_autoRefreshHandle)
+    _autoRefreshHandle = null
+  }
+}
+
+// kick off auto-refresh after initial load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startAutoRefresh)
+} else {
+  startAutoRefresh()
+}
